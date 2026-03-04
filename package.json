@@ -1,0 +1,56 @@
+{
+  "name": "electronup-template",
+  "type": "module",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "electronup",
+    "build": "electronup build",
+    "build:dir": "electronup build --dir",
+    "build:win": "electronup build --win",
+    "build:win32": "electronup build --win ia32",
+    "build:win64": "electronup build --win x64",
+    "build:mac": "electronup build --mac",
+    "build:mac-x64": "electronup build --mac x64",
+    "build:mac-arm64": "electronup build --mac arm64",
+    "build:mac-universal": "electronup build --mac universal",
+    "build:linux": "electronup build --linux",
+    "build:option": "electronup build -o",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "prepare": "simple-git-hooks",
+    "upgrade:latest": "pnpm update --latest",
+    "upgrade:interactive": "pnpm update --interactive --latest",
+    "commit": "qui gc"
+  },
+  "dependencies": {
+    "@quiteer/electron-ipc": "^2.0.4",
+    "@quiteer/electron-preload": "^0.0.10"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^7.6.1",
+    "@quiteer/scripts": "^0.1.6",
+    "electronup": "link:../../../Library/pnpm/global/5/node_modules/electronup",
+    "eslint": "^10.0.2",
+    "eslint-plugin-format": "^2.0.1",
+    "lint-staged": "^16.2.7",
+    "simple-git-hooks": "^2.13.1",
+    "tsx": "^4.21.0",
+    "typescript": "~5.9.3"
+  },
+  "pnpm": {
+    "overrides": {},
+    "onlyBuiltDependencies": [
+      "electron",
+      "esbuild",
+      "simple-git-hooks"
+    ]
+  },
+  "simple-git-hooks": {
+    "commit-msg": "pnpm qui gv",
+    "pre-commit": "pnpm lint-staged"
+  },
+  "lint-staged": {
+    "*": "eslint --fix"
+  }
+}
