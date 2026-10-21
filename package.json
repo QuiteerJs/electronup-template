@@ -21,15 +21,21 @@
     "prepare": "simple-git-hooks",
     "upgrade:latest": "pnpm update --latest",
     "upgrade:interactive": "pnpm update --interactive --latest",
-    "commit": "qui gc"
+    "commit": "qui gc",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@quiteer/electron-ipc": "^2.0.4",
-    "@quiteer/electron-preload": "^0.0.10"
+    "@quiteer/electron-preload": "^0.0.10",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^7.6.1",
     "@quiteer/scripts": "^0.1.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react-swc": "^4.3.3",
     "electronup": "^0.2.5",
     "eslint": "^10.0.2",
     "eslint-plugin-format": "^2.0.1",
