@@ -1,19 +1,18 @@
+import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'electronup'
 
-export default defineConfig((env) => {
-  console.log('defineConfig env: ', env)
-  return {
-    viteConfig: {
+export default defineConfig({
+  viteConfig: {
+    plugins: [vue()],
+  },
+  builderConfig: {
+    asar: false,
+    mac: {
+      target: [
+        {
+          target: 'dmg',
+        },
+      ],
     },
-    builderConfig: {
-      asar: false,
-      mac: {
-        target: [
-          {
-            target: 'dmg',
-          },
-        ],
-      },
-    },
-  }
+  },
 })

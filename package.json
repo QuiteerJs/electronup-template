@@ -21,21 +21,25 @@
     "prepare": "simple-git-hooks",
     "upgrade:latest": "pnpm update --latest",
     "upgrade:interactive": "pnpm update --interactive --latest",
-    "commit": "qui gc"
+    "commit": "qui gc",
+    "typecheck": "vue-tsc --noEmit"
   },
   "dependencies": {
     "@quiteer/electron-ipc": "^2.0.4",
-    "@quiteer/electron-preload": "^0.0.10"
+    "@quiteer/electron-preload": "^0.0.10",
+    "vue": "^3.5.44"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^7.6.1",
     "@quiteer/scripts": "^0.1.6",
+    "@vitejs/plugin-vue": "^6.0.10",
     "electronup": "^0.2.5",
     "eslint": "^10.0.2",
     "eslint-plugin-format": "^2.0.1",
     "lint-staged": "^16.2.7",
     "simple-git-hooks": "^2.13.1",
-    "typescript": "~5.9.3"
+    "typescript": "~5.9.3",
+    "vue-tsc": "^3.3.13"
   },
   "pnpm": {
     "overrides": {},

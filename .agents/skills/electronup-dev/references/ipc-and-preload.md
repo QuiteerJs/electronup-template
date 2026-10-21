@@ -11,22 +11,24 @@
 ```ts
 import preloadPath from '@quiteer/electron-preload'
 
-new BrowserWindow({
+const win = new BrowserWindow({
   webPreferences: { sandbox: true, preload: preloadPath },
 })
+
+win.loadURL(loadUrl)
 ```
 
 未接 preload 时渲染层**没有** `window.$ipc`，别假设它存在。
 
 ## `window.$ipc`（通用通道）
 
-| 方法 | 说明 |
-| --- | --- |
-| `send(channel, ...args)` | 单向发送 |
-| `invoke(channel, ...args)` | 双向调用，返回 `Promise` |
-| `on(channel, listener)` / `once(...)` | 监听主进程推送 |
-| `sendSync(...)` | 同步发送，阻塞渲染进程，非必要不用 |
-| `removeAllListeners(channel?)` | 移除监听，不传则清空 |
+| 方法                                  | 说明                               |
+| ------------------------------------- | ---------------------------------- |
+| `send(channel, ...args)`              | 单向发送                           |
+| `invoke(channel, ...args)`            | 双向调用，返回 `Promise`           |
+| `on(channel, listener)` / `once(...)` | 监听主进程推送                     |
+| `sendSync(...)`                       | 同步发送，阻塞渲染进程，非必要不用 |
+| `removeAllListeners(channel?)`        | 移除监听，不传则清空               |
 
 内置通道（来自 `@quiteer/electron-ipc`）：
 
