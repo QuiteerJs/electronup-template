@@ -21,7 +21,8 @@
     "prepare": "simple-git-hooks",
     "upgrade:latest": "pnpm update --latest",
     "upgrade:interactive": "pnpm update --interactive --latest",
-    "commit": "qui gc"
+    "commit": "qui gc",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@quiteer/electron-ipc": "^2.0.4",
