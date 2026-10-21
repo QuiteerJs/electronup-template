@@ -8,47 +8,57 @@
 `electronup-template` 的 `solid` 分支：一个可直接运行、可直接打包的 Electron + TypeScript 桌面应用骨架，用一条命令完成「双进程热更新 + 多环境构建 + 多平台安装包」。
 
 - 编排工具：`electronup` CLI —— 只对 Vite / tsdown / electron-builder 做预置配置，不魔改原工具，几乎所有原配置都可覆盖
-- 渲染进程：SolidJS + TypeScript（待接入，见下方说明）
+- 渲染进程：SolidJS + TypeScript（`vite-plugin-solid`）
 - 主进程：`main/`，TypeScript 经 **tsdown** 打包为 **CJS**
 - 配置入口：**只有** `electronup.config.ts` 一个文件
 - 包管理器：**pnpm**（`pnpm-lock.yaml`）；Node 版本见 `.node-version`（当前 `24.12.0`）
 
-> **当前分支 `solid`**：目标技术栈 SolidJS + TypeScript。
->
-> ⚠️ 现状：该分支**尚未落地** Solid 代码，`render/` 仍是模板默认的原生 TS 入口（`render/main.ts` + `render/counter.ts`）。
-> 要真正用 Solid，先完成下面的接入清单，否则不要在「已有 Solid 代码」的假设上继续改。
+## 本分支渲染层：SolidJS + TypeScript
 
-> 接入清单：
-> 1. `pnpm add solid-js` + `pnpm add -D vite-plugin-solid`
-> 2. `viteConfig.plugins: [solid()]`（`import solid from 'vite-plugin-solid'`）
-> 3. 入口改 `render/main.tsx` 并同步 `render/index.html` 的 `<script src>`，`tsconfig.json` 加 `"jsx": "preserve"` 与 `"jsxImportSource": "solid-js"`
-> 4. Solid 是细粒度响应式：用 `createSignal` / `createMemo`，组件函数只执行一次，不要照搬 React 的 hooks 心智与依赖数组写法
+| 文件                      | 作用                                      |
+| ------------------------- | ----------------------------------------- |
+| `render/index.html`       | Vite 入口，`#app` 为挂载点                |
+| `render/main.tsx`         | 入口：`render(() => <App />, container)`  |
+| `render/App.tsx`          | 根组件                                    |
+| `render/components/*.tsx` | 业务组件                                  |
+| `render/env.d.ts`         | `ImportMetaEnv` 与 `vite/client` 类型声明 |
+| `render/style.css`        | 全局样式                                  |
+
+约定：
+
+- 细粒度响应式：用 `createSignal` / `createMemo` / `createEffect`，不要把 React 的 `useState` + 依赖数组心智搬过来
+- 组件函数体只执行一次，DOM 更新由信号驱动；副作用放 `onMount` / `onCleanup`
+- JSX 写 `class` 而不是 `className`；`jsx: preserve` + `jsxImportSource: solid-js` 已在 `tsconfig.json` 配好
+- 新增 `VITE_` 变量后，同步在 `env.d.ts` 的 `ImportMetaEnv` 补类型
+- 类型检查走 `pnpm typecheck`（`tsc --noEmit`）
+- `vite-plugin-solid` 已在 `electronup.config.ts` 的 `viteConfig.plugins` 配好，不要重复添加
 
 ## 目录约定
 
-| 目录 | 作用 | 对应配置字段（顶层） |
-| --- | --- | --- |
-| `main/` | 主进程源码，入口 `main/index.ts` | `mainDir`，默认 `main` |
-| `render/` | 渲染进程，`index.html` 所在目录即 Vite `root` | `renderDir`，默认 `render` |
-| `public/` | 全局静态资源，原样拷贝，以 `/` 引用 | `publicDir`，默认 `public` |
-| `lib/` | 动态库（原生 `.node` 等），整目录随包额外拷贝 | `libDir`，默认 `lib` |
-| `dist/resource/` | 构建产物（vite 渲染层 + tsdown 主进程） | `resourceDir`，默认 `dist` |
-| `out/` | electron-builder 安装包输出 | `outDir`，默认 `out` |
+| 目录             | 作用                                          | 对应配置字段（顶层）       |
+| ---------------- | --------------------------------------------- | -------------------------- |
+| `main/`          | 主进程源码，入口 `main/index.ts`              | `mainDir`，默认 `main`     |
+| `render/`        | 渲染进程，`index.html` 所在目录即 Vite `root` | `renderDir`，默认 `render` |
+| `public/`        | 全局静态资源，原样拷贝，以 `/` 引用           | `publicDir`，默认 `public` |
+| `lib/`           | 动态库（原生 `.node` 等），整目录随包额外拷贝 | `libDir`，默认 `lib`       |
+| `dist/resource/` | 构建产物（vite 渲染层 + tsdown 主进程）       | `resourceDir`，默认 `dist` |
+| `out/`           | electron-builder 安装包输出                   | `outDir`，默认 `out`       |
 
 **路径类配置只在顶层生效**：写成 `viteConfig.root`、`viteConfig.build.outDir`、`viteConfig.publicDir` 都会被外层字段覆盖，改了等于没改。
 
 ## 常用命令
 
-| 命令 | 说明 |
-| --- | --- |
-| `pnpm dev` | 开发：渲染层 HMR，主进程改动自动重启 |
-| `pnpm build` | 构建当前平台的安装包 |
-| `pnpm build:dir` | 只出免安装目录版，验证打包结果的首选 |
-| `pnpm build:win` / `build:win32` / `build:win64` | Windows：默认双架构 / ia32 / x64 |
-| `pnpm build:mac` / `build:mac-x64` / `build:mac-arm64` / `build:mac-universal` | macOS 各架构 |
-| `pnpm build:linux` | Linux |
-| `pnpm build:option` | 交互式选择构建目标 |
-| `pnpm lint` / `pnpm lint:fix` | ESLint（`@antfu/eslint-config`） |
+| 命令                                                                           | 说明                                 |
+| ------------------------------------------------------------------------------ | ------------------------------------ |
+| `pnpm dev`                                                                     | 开发：渲染层 HMR，主进程改动自动重启 |
+| `pnpm build`                                                                   | 构建当前平台的安装包                 |
+| `pnpm build:dir`                                                               | 只出免安装目录版，验证打包结果的首选 |
+| `pnpm build:win` / `build:win32` / `build:win64`                               | Windows：默认双架构 / ia32 / x64     |
+| `pnpm build:mac` / `build:mac-x64` / `build:mac-arm64` / `build:mac-universal` | macOS 各架构                         |
+| `pnpm build:linux`                                                             | Linux                                |
+| `pnpm build:option`                                                            | 交互式选择构建目标                   |
+| `pnpm lint` / `pnpm lint:fix`                                                  | ESLint（`@antfu/eslint-config`）     |
+| `pnpm typecheck`                                                               | 类型检查（不产出文件）               |
 
 - **没有测试框架**，不存在 `pnpm test`，不要臆造测试脚本或测试目录。
 - 一次构建只能产出一个平台的包，多平台要分批执行。
@@ -75,9 +85,9 @@
 
 ## 能力索引
 
-| 触发场景 | 加载 |
-| --- | --- |
-| 新增功能页 / 组件、加 IPC 通道、加环境变量、改打包目标、排查 dev 或打包异常 | `.agents/skills/electronup-dev/SKILL.md` |
-| `electronup.config.ts` 字段全表、默认值、可覆盖性 | `.agents/skills/electronup-dev/references/config.md` |
-| 命令与 flag、mode 矩阵、平台/架构、产物路径 | `.agents/skills/electronup-dev/references/cli-and-build.md` |
-| `window.$ipc` / `$clipboard` / `$webFrame`、内置通道、类型增强 | `.agents/skills/electronup-dev/references/ipc-and-preload.md` |
+| 触发场景                                                                    | 加载                                                          |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| 新增功能页 / 组件、加 IPC 通道、加环境变量、改打包目标、排查 dev 或打包异常 | `.agents/skills/electronup-dev/SKILL.md`                      |
+| `electronup.config.ts` 字段全表、默认值、可覆盖性                           | `.agents/skills/electronup-dev/references/config.md`          |
+| 命令与 flag、mode 矩阵、平台/架构、产物路径                                 | `.agents/skills/electronup-dev/references/cli-and-build.md`   |
+| `window.$ipc` / `$clipboard` / `$webFrame`、内置通道、类型增强              | `.agents/skills/electronup-dev/references/ipc-and-preload.md` |

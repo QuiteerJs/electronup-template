@@ -21,11 +21,13 @@
     "prepare": "simple-git-hooks",
     "upgrade:latest": "pnpm update --latest",
     "upgrade:interactive": "pnpm update --interactive --latest",
-    "commit": "qui gc"
+    "commit": "qui gc",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@quiteer/electron-ipc": "^2.0.4",
-    "@quiteer/electron-preload": "^0.0.10"
+    "@quiteer/electron-preload": "^0.0.10",
+    "solid-js": "^1.9.17"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^7.6.1",
@@ -35,7 +37,8 @@
     "eslint-plugin-format": "^2.0.1",
     "lint-staged": "^16.2.7",
     "simple-git-hooks": "^2.13.1",
-    "typescript": "~5.9.3"
+    "typescript": "~5.9.3",
+    "vite-plugin-solid": "^2.11.14"
   },
   "pnpm": {
     "overrides": {},
