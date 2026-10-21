@@ -20,7 +20,9 @@ app.whenReady().then(() => {
   console.log('VITE_MODE_TEXT :>> ', process.env.VITE_MODE_TEXT)
 
   win.loadURL(loadUrl)
-  win.webContents.openDevTools({ mode: 'right' })
+  if (process.env.NODE_ENV === 'development') {
+    win.webContents.openDevTools({ mode: 'right' })
+  }
   // appApiLogs()
 })
 

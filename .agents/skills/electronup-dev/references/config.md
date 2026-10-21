@@ -4,18 +4,18 @@
 
 ## 顶层字段
 
-| 字段 | 类型 | 默认值 | 作用 |
-| --- | --- | --- | --- |
-| `renderDir` | `string` | `render` | 渲染进程目录，等价 Vite `root`（`index.html` 所在处） |
-| `mainDir` | `string` | `main` | 主进程源码目录 |
-| `publicDir` | `string` | `public` | 全局静态资源目录，等价 Vite `publicDir` |
-| `libDir` | `string` | `lib` | 动态库目录，整目录随包额外拷贝（`extraFiles`） |
-| `resourceDir` | `string` | `dist` | vite + tsdown 的构建输出目录（`dist/resource`），dev 时也输出到此 |
-| `outDir` | `string` | `out` | electron-builder 安装包输出目录 |
-| `viteConfig` | `ViteConfig` | `{}` | 透传 Vite 用户配置 |
-| `tsdownConfig` | `TsdownConfig` | `{}` | 主进程构建配置（仅暴露少量字段） |
-| `preload` | `Options \| Options[]` | – | 预加载脚本的打包配置（vite-plus pack 选项），可传单个或多个入口 |
-| `builderConfig` | `Configuration` | 见下 | electron-builder 配置，类型即 electron-builder 的 `Configuration` |
+| 字段            | 类型                   | 默认值   | 作用                                                              |
+| --------------- | ---------------------- | -------- | ----------------------------------------------------------------- |
+| `renderDir`     | `string`               | `render` | 渲染进程目录，等价 Vite `root`（`index.html` 所在处）             |
+| `mainDir`       | `string`               | `main`   | 主进程源码目录                                                    |
+| `publicDir`     | `string`               | `public` | 全局静态资源目录，等价 Vite `publicDir`                           |
+| `libDir`        | `string`               | `lib`    | 动态库目录，整目录随包额外拷贝（`extraFiles`）                    |
+| `resourceDir`   | `string`               | `dist`   | vite + tsdown 的构建输出目录（`dist/resource`），dev 时也输出到此 |
+| `outDir`        | `string`               | `out`    | electron-builder 安装包输出目录                                   |
+| `viteConfig`    | `ViteConfig`           | `{}`     | 透传 Vite 用户配置                                                |
+| `tsdownConfig`  | `TsdownConfig`         | `{}`     | 主进程构建配置（仅暴露少量字段）                                  |
+| `preload`       | `Options \| Options[]` | –        | 预加载脚本的打包配置（vite-plus pack 选项），可传单个或多个入口   |
+| `builderConfig` | `Configuration`        | 见下     | electron-builder 配置，类型即 electron-builder 的 `Configuration` |
 
 注意：`builderConfig` 在类型定义中是必填字段，模板里已提供。
 
@@ -23,11 +23,11 @@
 
 路径都以项目根目录为基准拼接。这三处**改不动**，必须用顶层字段覆盖：
 
-| 想在 vite 里改 | 实际必须改 |
-| --- | --- |
-| `root` | `renderDir` |
-| `publicDir` | `publicDir`（顶层） |
-| `build.outDir` | `resourceDir` |
+| 想在 vite 里改 | 实际必须改          |
+| -------------- | ------------------- |
+| `root`         | `renderDir`         |
+| `publicDir`    | `publicDir`（顶层） |
+| `build.outDir` | `resourceDir`       |
 
 `viteConfig.o`、`ssr` 被显式排除出类型（`Omit<UserConfig, 'publicDir' | 'ssr'>`）。
 
@@ -41,9 +41,9 @@
 
 主进程用 tsdown 构建，只暴露两个字段：
 
-| 字段 | 说明 |
-| --- | --- |
-| `external` | 不参与打包的模块（运行时由 `node_modules` 提供） |
+| 字段         | 说明                                               |
+| ------------ | -------------------------------------------------- |
+| `external`   | 不参与打包的模块（运行时由 `node_modules` 提供）   |
 | `noExternal` | 强制参与打包（内联）的模块，用来吞掉 ESM-only 依赖 |
 
 预置行为（不可配置）：`format: cjs`、`dts: false`、`clean: false`、入口 `mainDir/index.ts`、`outDir` 为 `resourceDir`、并注入 `NODE_ENV` 与全部 `.env` 变量。
@@ -55,12 +55,12 @@
 ```yaml
 appId: org.quiteer.electronup
 productName: <package.json name>
-protocols: { name: <name>, schemes: [deeplink] }
-files: [ { filter: [ 'dist/resource/**/*' ] } ]
-extraFiles: [ { filter: [ 'lib' ] } ]
-directories: { output: dist/out }
-win: { icon: public/icon.png, target: { target: nsis, arch: ia32 } }
-nsis: { oneClick: false, perMachine: true, allowElevation: true, allowToChangeInstallationDirectory: true, artifactName: '<name> ${arch} Setup ${version}.${ext}' }
+protocols: {name: <name>, schemes: [deeplink]}
+files: [{filter: ['dist/resource/**/*']}]
+extraFiles: [{filter: [lib]}]
+directories: {output: dist/out}
+win: {icon: public/icon.png, target: {target: nsis, arch: ia32}}
+nsis: {oneClick: false, perMachine: true, allowElevation: true, allowToChangeInstallationDirectory: true, artifactName: '<name> ${arch} Setup ${version}.${ext}'}
 ```
 
 要点：
