@@ -83,6 +83,7 @@
 9. 当前 `builderConfig.asar` 为 `false`，便于排查；对外发版前建议改回 `true`
 10. **依赖版本一律用 npm 正式版本**（`electronup` / `electron` / `@quiteer/*` 均为 `^x.y.z`）。禁止 `link:` / `file:` 指向本地路径——模板会被 `create-electronup` 直接拉取，本地链接会让使用者直接装不上
 11. `electron` 从 electronup 0.3.0 起不再由 CLI 自带，必须作为 devDependency 显式声明；升级 electronup 时同步检查 `electron`、`@quiteer/electron-ipc`、`@quiteer/electron-preload` 是否需要跟进
+12. 构建脚本白名单写在 **`pnpm-workspace.yaml`** 的 `onlyBuiltDependencies`（pnpm 10+ 不再读取 `package.json` 的 `pnpm` 字段）；漏了它 `electron` 的 postinstall 不会执行，随后 `dev` / `build` 会报找不到 Electron 二进制
 
 ## 能力索引
 
