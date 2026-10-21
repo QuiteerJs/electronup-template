@@ -12,14 +12,14 @@ electronup 是「编排器」而非新框架。三件事各归各管：
 | 关注点                          | 实际工具         | 产物                                  |
 | ------------------------------- | ---------------- | ------------------------------------- |
 | 渲染进程（窗口里的页面）        | Vite             | `dist/resource/index.html` + 静态资源 |
-| 主进程（窗口、系统能力）        | tsdown           | `dist/resource/electron.js`（CJS）    |
+| 主进程（窗口、系统能力）        | vite-plus pack   | `dist/resource/electron.cjs`（CJS）   |
 | 安装包（dmg / nsis / AppImage） | electron-builder | `out/`                                |
 
 推论（决定了几乎所有改动方式）：
 
 1. **渲染层写的就是普通 Vite 项目**：HMR、`import.meta.env`、`public/` 规则全部照旧。
 2. **主进程写的就是普通 Node + Electron**，但是 CJS 产物，`__dirname` 可用、`import.meta` 不可用。
-3. **唯一的配置面是 `electronup.config.ts`**：`viteConfig` / `tsdownConfig` / `builderConfig` 分别透传给三个工具；路径类字段只认顶层（`mainDir` / `renderDir` / `publicDir` / `libDir` / `resourceDir` / `outDir`）。
+3. **唯一的配置面是 `electronup.config.ts`**：`viteConfig` / `packConfig` / `builderConfig` 分别透传给渲染层 Vite、主进程 pack、electron-builder；路径类字段只认顶层（`mainDir` / `renderDir` / `publicDir` / `libDir` / `resourceDir` / `outDir`）。
 4. **环境变量是统一的**：同一批 `.env` 变量同时进渲染层（仅 `VITE_` 前缀）和主进程（`process.env`）。
 
 ## 工作流 A：新增渲染层功能
@@ -125,27 +125,47 @@ interface Window {
 - 改目录：只改 config 顶层字段，例如 `renderDir: 'src/renderer'`（记得同步移动目录和 `index.html` 内的相对脚本路径）。
 - 加平台目标：优先写进 `builderConfig`（如 `mac.target: ['dmg', 'zip']`、`win.target: [{ target: 'nsis', arch: ['x64'] }]`），命令行 flag 权重高于配置，适合临时覆盖。
 - 加需要随包分发的动态库：放 `lib/`，并在 `builderConfig.extraFiles` 里包含。
-- 打包前自检顺序：`pnpm typecheck` → `pnpm lint` → `pnpm dev` 跑通关键路径 → `pnpm build:dir` 打开产物验证 → `pnpm build` 出安装包。
+- 打包前自检顺序：`pnpm typecheck` → `pnpm lint` → `pnpm build:web`（渲染层能否构建）→ `pnpm dev` 跑通关键路径 → `pnpm build:dir` 打开产物验证 → `pnpm build` 出安装包。
+
+## 工作流 E：接入自动更新（electronup 0.3.0+）
+
+`electronup` 直接导出 electron-updater 的封装，不用自己装 `electron-updater`：
+
+```ts
+// main/index.ts
+import { initAutoUpdater } from 'electronup'
+
+app.whenReady().then(() => {
+  initAutoUpdater({ checkOnStart: true, autoDownload: true, autoInstallOnAppQuit: true })
+})
+```
+
+- `autoUpdater` 是惰性代理，读取属性时才实例化，配置加载阶段不会触发 electron 副作用。
+- 发布端要配 `builderConfig.publish`（generic / github 等），否则更新源为空。
+- 手动触发检查用 `checkForUpdates()`。
 
 ## 排错对照表
 
 | 现象                                | 优先排查                                                                                      |
 | ----------------------------------- | --------------------------------------------------------------------------------------------- |
 | dev 白屏                            | `main/index.ts` 打印的 `loadUrl` 是否带正确 `RENDER_PORT`；渲染层是否抛错（DevTools Console） |
-| 改主进程没反应                      | tsdown watch 是否启动；是否改到了 `dist/` 里的产物而不是 `main/` 源码                         |
+| 改主进程没反应                      | pack 的 watch 是否启动；是否改到了 `dist/` 里的产物而不是 `main/` 源码                        |
 | 渲染层报找不到 `/vite.svg`          | `publicDir` 是否被改到了 `render/` 下；`public/` 只有配在 config 顶层才生效                   |
 | 环境变量读不到                      | 是否 `VITE_` 前缀；`-m` 与文件名后缀是否一致；是否在 config 文件里读（不支持）                |
 | 打包后白屏                          | `viteConfig.base` 必须保持 `./`；`render/index.html` 里资源路径不能是绝对路径 `/xxx`          |
 | 原生模块报 ABI 不匹配               | 重跑 `pnpm exec electron-builder install-app-deps`；确认模块在 `lib/` 或 `files` 白名单内     |
-| 主进程启动即崩、报 `require of ESM` | 该依赖是 ESM-only，加进 `tsdownConfig.noExternal` 内联，或降级到 CJS 版本                     |
+| 主进程启动即崩、报 `require of ESM` | 该依赖是 ESM-only，加进 `packConfig.noExternal` 内联，或降级到 CJS 版本                       |
+| 启动即报找不到 `electron`           | `electron` 未写进 devDependencies（0.3.0 起 CLI 不再自带），补上并 `pnpm install`             |
+| `build` / `dev` 长时间卡住无输出    | 首次运行在下载 Electron 二进制；检查 `.npmrc` 的 `electron_mirror` 是否可用                   |
 | 打包体积异常大                      | `builderConfig.files` 是否把 `node_modules` 整包带入；`asar` 是否为 `false`                   |
 | 端口冲突                            | CLI 会自动切换，别在代码里写死端口                                                            |
 | 类型检查报找不到模块                | 是否漏了 `render/env.d.ts` 的 `vite/client` 引用；`.vue` 是否用 `vue-tsc` 而非 `tsc`          |
 
 ## 完成前自检
 
-- [ ] `pnpm typecheck` 通过
+- [ ] `pnpm typecheck` 通过（渲染层 + 主进程两段都会跑）
 - [ ] `pnpm lint` 通过（不是 `lint:fix` 后再看，先确认没有新增 error）
+- [ ] 改了渲染层时 `pnpm build:web` 通过
 - [ ] `pnpm dev` 手动验证改动路径可用
 - [ ] 涉及打包配置时跑过 `pnpm build:dir`
 - [ ] 没有改 `viteConfig.root` / `build.outDir` / `publicDir` 这类会被覆盖的字段

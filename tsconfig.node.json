@@ -2,11 +2,11 @@
   "compilerOptions": {
     "composite": true,
     "target": "esnext", // 目标语言的版本
-    "lib": ["ESNext"],
+    "lib": ["ESNext", "DOM"], // electron 的 d.ts 依赖 DOM 类型
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "module": "esnext", // 生成代码的模板标准
-    "moduleResolution": "node", // 模块解析策略，ts默认用node的解析策略，即相对的方式导入
+    "moduleResolution": "bundler", // 与渲染层保持一致，支持 exports 字段
     "resolveJsonModule": true,
     "types": ["node"],
     "strict": true, // 开启所有严格的类型检查
@@ -15,10 +15,10 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true, // 允许export=导出，由import from 导入
     "forceConsistentCasingInFileNames": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "skipLibCheck": true
   },
   "include": [
-    "build/**/*.ts",
     "main/**/*.ts",
     "typings/*.d.ts",
     "package.json"

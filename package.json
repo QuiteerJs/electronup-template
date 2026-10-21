@@ -22,32 +22,26 @@
     "upgrade:latest": "pnpm update --latest",
     "upgrade:interactive": "pnpm update --interactive --latest",
     "commit": "qui gc",
-    "typecheck": "vue-tsc --noEmit"
+    "typecheck": "vue-tsc --noEmit && tsc -p tsconfig.node.json --noEmit --composite false",
+    "build:web": "electronup build --web"
   },
   "dependencies": {
-    "@quiteer/electron-ipc": "^2.0.4",
-    "@quiteer/electron-preload": "^0.0.10",
+    "@quiteer/electron-ipc": "^3.0.1",
+    "@quiteer/electron-preload": "^1.0.0",
     "vue": "^3.5.44"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^7.6.1",
     "@quiteer/scripts": "^0.1.6",
     "@vitejs/plugin-vue": "^6.0.10",
-    "electronup": "^0.2.5",
+    "electron": "^45.0.0",
+    "electronup": "^0.3.0",
     "eslint": "^10.0.2",
     "eslint-plugin-format": "^2.0.1",
     "lint-staged": "^16.2.7",
     "simple-git-hooks": "^2.13.1",
     "typescript": "~5.9.3",
     "vue-tsc": "^3.3.13"
-  },
-  "pnpm": {
-    "overrides": {},
-    "onlyBuiltDependencies": [
-      "electron",
-      "esbuild",
-      "simple-git-hooks"
-    ]
   },
   "simple-git-hooks": {
     "commit-msg": "pnpm qui gv",

@@ -1,0 +1,6 @@
+# pnpm 10+ 起，构建脚本白名单需要写在这里
+# （package.json 里的 pnpm.onlyBuiltDependencies 已不再被新版 pnpm 读取）
+onlyBuiltDependencies:
+  - electron
+  - esbuild
+  - simple-git-hooks
