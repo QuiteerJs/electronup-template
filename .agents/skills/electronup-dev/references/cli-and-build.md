@@ -21,16 +21,17 @@ electronup build --help
 
 ## build 参数
 
-| 参数                            | 说明                                                 |
-| ------------------------------- | ---------------------------------------------------- |
-| `--dir`                         | 只出目录版（免安装，可直接启动），验证打包结果首选   |
-| `--no-asar`                     | `asar: false`，产物为散文件                          |
-| `--win [ia32\|x64]`             | 不传架构则同时产 ia32 + x64 两个包                   |
-| `--mac [x64\|arm64\|universal]` | 不传则按当前机器架构；`universal` 为双架构合并包     |
-| `--linux [x64\|arm64\|armv7l]`  | 不传则按当前机器架构                                 |
-| `-o, --option`                  | 交互式选择构建目标（mac 上可跨三端，win 上只能 win） |
-| `-m, --mode <mode>`             | 指定环境模式                                         |
-| `--no-minify`                   | 不压缩                                               |
+| 参数                            | 说明                                                                                        |
+| ------------------------------- | ------------------------------------------------------------------------------------------- |
+| `--dir`                         | 只出目录版（免安装，可直接启动），验证打包结果首选                                          |
+| `--web`                         | 只构建渲染层：不构建主进程 / preload，也不出安装包。CI 与没装 Electron 二进制时用它验证前端 |
+| `--no-asar`                     | `asar: false`，产物为散文件                                                                 |
+| `--win [ia32\|x64]`             | 不传架构则同时产 ia32 + x64 两个包                                                          |
+| `--mac [x64\|arm64\|universal]` | 不传则按当前机器架构；`universal` 为双架构合并包                                            |
+| `--linux [x64\|arm64\|armv7l]`  | 不传则按当前机器架构                                                                        |
+| `-o, --option`                  | 交互式选择构建目标（mac 上可跨三端，win 上只能 win）                                        |
+| `-m, --mode <mode>`             | 指定环境模式                                                                                |
+| `--no-minify`                   | 不压缩                                                                                      |
 
 一次构建只产出一个平台的包；多平台必须分批执行并各自保存产物。
 
@@ -47,12 +48,19 @@ electronup build --help
 - 同一批变量同时注入渲染层（仅 `VITE_` 前缀）与主进程（`process.env`）。
 - 配置文件内读不到环境变量。
 
+## 依赖前提（0.3.0 起）
+
+- `electron` 不再由 electronup 传递依赖提供，**必须**在模板的 devDependencies 里显式声明，否则 `dev` / `build` 找不到二进制。
+- `electron-builder`、`electron-updater` 仍随 electronup 提供。
+- 升级 electronup 后先跑 `pnpm install`，再 `pnpm build:web` 确认渲染层没被新版本 Vite 破坏。
+
 ## 产物路径
 
-| 阶段                 | 路径             | 内容                                  |
-| -------------------- | ---------------- | ------------------------------------- |
-| dev / build 中间产物 | `dist/resource/` | `index.html`、`electron.js`、资源文件 |
-| 安装包               | `out/`           | dmg / nsis / AppImage 等              |
+| 阶段                   | 路径             | 内容                                               |
+| ---------------------- | ---------------- | -------------------------------------------------- |
+| dev / build 中间产物   | `dist/resource/` | `index.html`、`assets/*`、`electron.cjs`（主进程） |
+| preload 产物（如启用） | `dist/resource/` | `<name>.cjs`，与主进程同目录                       |
+| 安装包                 | `out/`           | dmg / nsis / AppImage 等                           |
 
 ## 各平台注意
 
