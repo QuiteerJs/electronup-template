@@ -11,7 +11,7 @@
 - 渲染进程：原生 TypeScript + DOM（vanilla-ts），无框架、无运行时依赖
 - 主进程：`main/`，TypeScript 经 **vite-plus pack** 打包为 **CJS**（产物 `dist/resource/electron.cjs`）
 - 配置入口：**只有** `electronup.config.ts` 一个文件
-- 包管理器：**pnpm**（`pnpm-lock.yaml`）；Node 版本见 `.node-version`（当前 `22.14.0`）
+- 包管理器：**pnpm**（`pnpm-lock.yaml`）；Node 版本见 `.node-version`（当前 `24.12.0`）
 
 ## 本分支渲染层：原生 TypeScript + DOM
 
@@ -29,18 +29,16 @@
 - 新增 `VITE_` 变量后，同步在 `env.d.ts` 的 `ImportMetaEnv` 补类型
 - 类型检查走 `pnpm typecheck`（`tsc --noEmit`，`noEmit` 已写在 `tsconfig.json`）
 
-> 注意：本分支 `electronup` 依赖是本地 link（`link:../../../Library/pnpm/global/5/node_modules/electronup`），用于联调 electronup 自身，Windows 或其他机器上 `pnpm install` 会失败。做业务请切到 `vanilla` / `vue` / `react` / `react-swc` / `solid` 分支。
-
 ## 目录约定
 
-| 目录             | 作用                                                 | 对应配置字段（顶层）       |
-| ---------------- | ---------------------------------------------------- | -------------------------- |
-| `main/`          | 主进程源码，入口 `main/index.ts`                     | `mainDir`，默认 `main`     |
-| `render/`        | 渲染进程，`index.html` 所在目录即 Vite `root`        | `renderDir`，默认 `render` |
-| `public/`        | 全局静态资源，原样拷贝，以 `/` 引用                  | `publicDir`，默认 `public` |
-| `lib/`           | 动态库（原生 `.node` 等），整目录随包额外拷贝        | `libDir`，默认 `lib`       |
-| `dist/resource/` | 构建产物（vite 渲染层 + pack 主进程 `electron.cjs`） | `resourceDir`，默认 `dist` |
-| `out/`           | electron-builder 安装包输出                          | `outDir`，默认 `out`       |
+| 目录             | 作用                                                 | 对应配置字段（顶层）                |
+| ---------------- | ---------------------------------------------------- | ----------------------------------- |
+| `main/`          | 主进程源码，入口 `main/index.ts`                     | `mainDir`，默认 `main`              |
+| `render/`        | 渲染进程，`index.html` 所在目录即 Vite `root`        | `renderDir`，默认 `render`          |
+| `public/`        | 全局静态资源，原样拷贝，以 `/` 引用                  | `publicDir`，默认 `public`          |
+| `lib/`           | 动态库（原生 `.node` 等），整目录随包额外拷贝        | `libDir`，默认 `lib`                |
+| `dist/resource/` | 构建产物（vite 渲染层 + pack 主进程 `electron.cjs`） | `resourceDir`，默认 `dist/resource` |
+| `dist/out/`      | electron-builder 安装包输出                          | `outDir`，默认 `dist/out`           |
 
 **路径类配置只在顶层生效**：写成 `viteConfig.root`、`viteConfig.build.outDir`、`viteConfig.publicDir` 都会被外层字段覆盖，改了等于没改。
 
@@ -68,7 +66,7 @@
 - 显式指定：`pnpm dev -m staging` → `.env` + `.env.staging`，**mode 名必须与文件名后缀完全一致**
 - 渲染层只暴露 `VITE_` 前缀，用 `import.meta.env.VITE_XXX`；主进程用 `process.env.VITE_XXX`（electronup 会把同一批变量注入主进程产物，双进程变量一致）
 - 开发期渲染层地址由 `process.env.RENDER_PORT` 拼出（见 `main/index.ts`），端口被占用时 CLI 会自动换端口，**不要写死 5173**
-- `electronup.config.ts` 内**读不到**这些环境变量（官方明确不支持）。需要按环境分支时，只能用 `defineConfig(({ command }) => ...)` 的 `command`（`serve` / `build`），或用 CLI 参数
+- `electronup.config.ts` 不自动注入 .env 文件；可以读取启动 CLI 前终端已经设置的 process.env（如 ELECTRONUP_UPDATE_URL），或按 defineConfig 的 command 分支。
 
 ## 改动约定（易踩坑）
 
@@ -83,7 +81,15 @@
 9. 当前 `builderConfig.asar` 为 `false`，便于排查；对外发版前建议改回 `true`
 10. **依赖版本一律用 npm 正式版本**（`electronup` / `electron` / `@quiteer/*` 均为 `^x.y.z`）。禁止 `link:` / `file:` 指向本地路径——模板会被 `create-electronup` 直接拉取，本地链接会让使用者直接装不上
 11. `electron` 从 electronup 0.3.0 起不再由 CLI 自带，必须作为 devDependency 显式声明；升级 electronup 时同步检查 `electron`、`@quiteer/electron-ipc`、`@quiteer/electron-preload` 是否需要跟进
-12. 构建脚本白名单写在 **`pnpm-workspace.yaml`** 的 `onlyBuiltDependencies`（pnpm 10+ 不再读取 `package.json` 的 `pnpm` 字段）；漏了它 `electron` 的 postinstall 不会执行，随后 `dev` / `build` 会报找不到 Electron 二进制
+12. 构建脚本白名单统一在 **`pnpm-workspace.yaml`** 的 `onlyBuiltDependencies` 维护。Electron 45 在首次使用时按需下载二进制；也可执行 `pnpm exec install-electron` 提前下载。旧版 Electron 若使用 postinstall，仍需保留 electron 的脚本许可。
+
+## 自动更新与模板同步
+
+- 当前基线为 electronup 0.3.1；Node 支持范围见 package.json，统一使用 pnpm 10.30.3。
+- electron-updater 是生产依赖，electronup 是开发依赖；packConfig.noExternal 必须内联 electronup，主入口保持 dist/resource/electron.cjs。
+- 构建时可设置终端环境变量 ELECTRONUP_UPDATE_URL；未设置时关闭发布源，运行时仅在已打包且 app-update.yml 存在时启用更新。
+- macOS 更新需要 zip，默认保留 dmg 和 zip。目录包通过不代表安装、下载和重启升级验收通过。
+- 同步 main/vanilla/vue/react/react-swc/solid 时保留框架差异，每个分支独立用 pnpm 生成 lockfile，并执行 typecheck、lint、build:web、build:dir。此仓库为应用模板，不执行 npm publish。
 
 ## 能力索引
 
@@ -93,3 +99,5 @@
 | `electronup.config.ts` 字段全表、默认值、可覆盖性                           | `.agents/skills/electronup-dev/references/config.md`          |
 | 命令与 flag、mode 矩阵、平台/架构、产物路径                                 | `.agents/skills/electronup-dev/references/cli-and-build.md`   |
 | `window.$ipc` / `$clipboard` / `$webFrame`、内置通道、类型增强              | `.agents/skills/electronup-dev/references/ipc-and-preload.md` |
+
+- @quiteer/electron-ipc 3.x 仅提供 ESM 导出，也必须加入 packConfig.noExternal 内联，避免 CJS 主进程启动时报 ERR_PACKAGE_PATH_NOT_EXPORTED。

@@ -46,12 +46,12 @@ electronup build --help
 
 - `mode` 字符串必须与 `.env.<mode>` 后缀一致，否则该文件不会被加载，且**不会报错**。
 - 同一批变量同时注入渲染层（仅 `VITE_` 前缀）与主进程（`process.env`）。
-- 配置文件内读不到环境变量。
+- 配置不自动读取 .env 文件，但可以读取启动 CLI 前终端已设置的 process.env。
 
 ## 依赖前提（0.3.0 起）
 
 - `electron` 不再由 electronup 传递依赖提供，**必须**在模板的 devDependencies 里显式声明，否则 `dev` / `build` 找不到二进制。
-- `electron-builder`、`electron-updater` 仍随 electronup 提供。
+- electron-builder 由 electronup 提供；安装包运行更新器时，electron-updater 必须直接声明为应用生产依赖，并将 electronup 封装内联。
 - 升级 electronup 后先跑 `pnpm install`，再 `pnpm build:web` 确认渲染层没被新版本 Vite 破坏。
 
 ## 产物路径
@@ -60,7 +60,7 @@ electronup build --help
 | ---------------------- | ---------------- | -------------------------------------------------- |
 | dev / build 中间产物   | `dist/resource/` | `index.html`、`assets/*`、`electron.cjs`（主进程） |
 | preload 产物（如启用） | `dist/resource/` | `<name>.cjs`，与主进程同目录                       |
-| 安装包                 | `out/`           | dmg / nsis / AppImage 等                           |
+| 安装包                 | `dist/out/`      | dmg / nsis / AppImage 等                           |
 
 ## 各平台注意
 

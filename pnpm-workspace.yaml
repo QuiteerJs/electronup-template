@@ -2,8 +2,12 @@ shellEmulator: true
 
 trustPolicy: no-downgrade
 
+# 已核对与既有锁文件及 npm 官方摘要一致，仅豁免旧主版本的精确版本
+trustPolicyExclude:
+  - semver@5.7.2 || 6.3.1
+  - rollup@3.30.0
 # pnpm 10+ 起，构建脚本白名单需要写在这里
-# （package.json 里的 pnpm.onlyBuiltDependencies 已不再被新版 pnpm 读取）
+# 构建脚本白名单统一在此维护
 onlyBuiltDependencies:
   - electron
   - esbuild
