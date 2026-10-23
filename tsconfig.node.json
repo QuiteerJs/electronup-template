@@ -20,6 +20,7 @@
   },
   "include": [
     "main/**/*.ts",
+    "electronup.config.ts",
     "typings/*.d.ts",
     "package.json"
   ]

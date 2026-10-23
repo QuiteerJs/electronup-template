@@ -1,14 +1,17 @@
 import { resolve } from 'node:path'
 import process from 'node:process'
+import { pathToFileURL } from 'node:url'
 import { Ipc } from '@quiteer/electron-ipc'
 import { app, BrowserWindow } from 'electron'
+import { initTemplateUpdater } from './updater'
 
 const loadUrl = process.env.NODE_ENV === 'development'
   ? `http://localhost:${process.env.RENDER_PORT}`
-  : `file://${resolve(__dirname, 'index.html')}`
+  : pathToFileURL(resolve(__dirname, 'index.html')).href
 
 app.whenReady().then(() => {
   Ipc.init()
+  initTemplateUpdater()
   const win = new BrowserWindow({
     height: 700,
     width: 1000,
