@@ -6,6 +6,7 @@ trustPolicy: no-downgrade
 trustPolicyExclude:
   - semver@5.7.2 || 6.3.1
   - rollup@3.30.0
+  - chokidar@4.0.3
 # pnpm 10+ 起，构建脚本白名单需要写在这里
 # 构建脚本白名单统一在此维护
 onlyBuiltDependencies:
