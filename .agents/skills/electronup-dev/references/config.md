@@ -4,18 +4,18 @@
 
 ## 顶层字段
 
-| 字段            | 类型                         | 默认值   | 作用                                                  |
-| --------------- | ---------------------------- | -------- | ----------------------------------------------------- |
-| `renderDir`     | `string`                     | `render` | 渲染进程目录，等价 Vite `root`（`index.html` 所在处） |
-| `mainDir`       | `string`                     | `main`   | 主进程源码目录                                        |
-| `publicDir`     | `string`                     | `public` | 全局静态资源目录，等价 Vite `publicDir`               |
-| `libDir`        | `string`                     | `lib`    | 动态库目录，整目录随包额外拷贝（`extraFiles`）        |
-| `resourceDir`   | `string`                     | `dist`   | 渲染层 + 主进程的构建输出目录（`dist/resource`）      |
-| `outDir`        | `string`                     | `out`    | electron-builder 安装包输出目录                       |
-| `viteConfig`    | `ViteConfig`                 | `{}`     | 透传 Vite 用户配置                                    |
-| `packConfig`    | `PackConfig`                 | `{}`     | 主进程 / preload 的打包配置（vite-plus pack）         |
-| `preload`       | `UserConfig \| UserConfig[]` | –        | 预加载脚本构建配置，可传单个或数组                    |
-| `builderConfig` | `Configuration`              | 见下     | electron-builder 配置，**可选**                       |
+| 字段            | 类型                         | 默认值          | 作用                                                  |
+| --------------- | ---------------------------- | --------------- | ----------------------------------------------------- |
+| `renderDir`     | `string`                     | `render`        | 渲染进程目录，等价 Vite `root`（`index.html` 所在处） |
+| `mainDir`       | `string`                     | `main`          | 主进程源码目录                                        |
+| `publicDir`     | `string`                     | `public`        | 全局静态资源目录，等价 Vite `publicDir`               |
+| `libDir`        | `string`                     | `lib`           | 动态库目录，整目录随包额外拷贝（`extraFiles`）        |
+| `resourceDir`   | `string`                     | `dist/resource` | 渲染层 + 主进程的构建输出目录（`dist/resource`）      |
+| `outDir`        | `string`                     | `dist/out`      | electron-builder 安装包输出目录                       |
+| `viteConfig`    | `ViteConfig`                 | `{}`            | 透传 Vite 用户配置                                    |
+| `packConfig`    | `PackConfig`                 | `{}`            | 主进程 / preload 的打包配置（vite-plus pack）         |
+| `preload`       | `UserConfig \| UserConfig[]` | –               | 预加载脚本构建配置，可传单个或数组                    |
+| `builderConfig` | `Configuration`              | 见下            | electron-builder 配置，**可选**                       |
 
 `PackConfig` 只有两个字段：
 
@@ -51,14 +51,13 @@
 生产模板生效后的关键项大致如下（不同版本数值会变，以 `electron-builder` 类型为准）：
 
 ```yaml
-appId: org.quiteer.electronup
+appId: com.<规整后的包名>
 productName: <package.json name>
-protocols: {name: <name>, schemes: [deeplink]}
 files: [{filter: ['dist/resource/**/*']}]
 extraFiles: [{filter: [lib]}]
 directories: {output: dist/out}
 win: {icon: public/icon.png, target: {target: nsis, arch: ia32}}
-nsis: {oneClick: false, perMachine: true, allowElevation: true, allowToChangeInstallationDirectory: true, artifactName: '<name> ${arch} Setup ${version}.${ext}'}
+nsis: {oneClick: false, perMachine: false, allowElevation: true, allowToChangeInstallationDirectory: true, artifactName: '<name> ${arch} Setup ${version}.${ext}'}
 ```
 
 要点：
@@ -67,20 +66,9 @@ nsis: {oneClick: false, perMachine: true, allowElevation: true, allowToChangeIns
 - `lib/` 通过 `extraFiles` 进包，适合放 `.node`、外部可执行文件。
 - 命令行 flag 优先级高于这里的配置。
 
-## 自动更新（0.3.0 新增）
+## 自动更新（0.3.1 模板）
 
-`electronup` 额外导出 `initAutoUpdater` / `checkForUpdates` / `autoUpdater`（基于 electron-updater）：
-
-```ts
-// main/index.ts
-import { initAutoUpdater } from 'electronup'
-
-app.whenReady().then(() => {
-  initAutoUpdater({ checkOnStart: true, autoDownload: true })
-})
-```
-
-`autoUpdater` 是惰性代理，配置加载阶段不会触发 electron 副作用。发布端还需要 `builderConfig.publish` 与对应的更新源配置。
+模板入口见 main/updater.ts。electron-updater 必须为生产依赖，electronup 在 packConfig.noExternal 中内联；构建前设置终端环境变量 ELECTRONUP_UPDATE_URL。未设置时 publish 为 null。安装包存在 app-update.yml 时才订阅 error 并初始化检查；mac target 保留 dmg 与 zip。
 
 ## 0.2.x → 0.3.x 迁移对照
 
