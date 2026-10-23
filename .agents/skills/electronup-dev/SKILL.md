@@ -13,7 +13,7 @@ electronup 是「编排器」而非新框架。三件事各归各管：
 | ------------------------------- | ---------------- | ------------------------------------- |
 | 渲染进程（窗口里的页面）        | Vite             | `dist/resource/index.html` + 静态资源 |
 | 主进程（窗口、系统能力）        | vite-plus pack   | `dist/resource/electron.cjs`（CJS）   |
-| 安装包（dmg / nsis / AppImage） | electron-builder | `out/`                                |
+| 安装包（dmg / nsis / AppImage） | electron-builder | `dist/out/`                           |
 
 推论（决定了几乎所有改动方式）：
 
@@ -117,7 +117,7 @@ interface Window {
 2. 同步在 `render/env.d.ts` 的 `ImportMetaEnv` 补一行类型，否则 `import.meta.env.VITE_API_BASE` 报类型错误。
 3. 渲染层 `import.meta.env.VITE_API_BASE`，主进程 `process.env.VITE_API_BASE`。
 4. 运行：`pnpm dev -m staging`（读 `.env` + `.env.staging`）；打包：`pnpm build -m staging`。
-5. 不要试图在 `electronup.config.ts` 里读环境变量做分支——目前不支持。只能靠 `defineConfig(({ command }) => ...)` 区分 `serve` / `build`。
+5. 配置不会自动读取 .env 文件；需要构建配置分支时，可读取启动 CLI 前终端已设置的 process.env，或使用 defineConfig 的 command。
 6. 新增 mode 时文件名后缀与 `-m` 参数严格一致（`.env.pre` ↔ `-m pre`），否则静默不加载。
 
 ## 工作流 D：改构建与打包
@@ -127,22 +127,16 @@ interface Window {
 - 加需要随包分发的动态库：放 `lib/`，并在 `builderConfig.extraFiles` 里包含。
 - 打包前自检顺序：`pnpm typecheck` → `pnpm lint` → `pnpm build:web`（渲染层能否构建）→ `pnpm dev` 跑通关键路径 → `pnpm build:dir` 打开产物验证 → `pnpm build` 出安装包。
 
-## 工作流 E：接入自动更新（electronup 0.3.0+）
+## 工作流 E：接入自动更新（electronup 0.3.1+）
 
-`electronup` 直接导出 electron-updater 的封装，不用自己装 `electron-updater`：
+模板已在 `main/updater.ts` 中接入，主进程 ready 后调用。配置与依赖必须同时满足：
 
-```ts
-// main/index.ts
-import { initAutoUpdater } from 'electronup'
-
-app.whenReady().then(() => {
-  initAutoUpdater({ checkOnStart: true, autoDownload: true, autoInstallOnAppQuit: true })
-})
-```
-
-- `autoUpdater` 是惰性代理，读取属性时才实例化，配置加载阶段不会触发 electron 副作用。
-- 发布端要配 `builderConfig.publish`（generic / github 等），否则更新源为空。
-- 手动触发检查用 `checkForUpdates()`。
+- `electronup` 保持 devDependency；`electron-updater` 必须是应用的 dependencies，否则安装包缺少运行依赖。
+- `packConfig.noExternal: ['electronup', '@quiteer/electron-ipc']` 将封装内联到 CJS 主进程；不要在配置求值期间读取 `autoUpdater` 属性。
+- 构建前在终端设置 `ELECTRONUP_UPDATE_URL`，配置将生成 generic 发布源；不设置时 `publish: null`，不会猜测 GitHub 发布地址。
+- 只有打包应用且 resources 中存在 `app-update.yml` 才初始化更新器；先订阅 error，再执行启动检查。
+- Windows 用 NSIS 生成更新元数据，macOS 保留 dmg + zip；仅目录构建不等于完整更新产物。
+- 应用版本必须递增，真实旧版本安装、检查下载、退出安装与重启需人工验收。
 
 ## 排错对照表
 
