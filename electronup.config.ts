@@ -14,8 +14,5 @@ export default defineConfig({
   builderConfig: {
     asar: false,
     publish: updateUrl ? [{ provider: 'generic', url: updateUrl }] : null,
-    mac: {
-      target: ['dmg', 'zip'],
-    },
   },
 })
